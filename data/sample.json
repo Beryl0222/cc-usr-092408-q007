@@ -1,0 +1,9 @@
+{
+  "event_id": "092108-013-sample-001",
+  "event_type": "NEED_LOGGED",
+  "aggregate_type": "community_need",
+  "aggregate_id": "park_demand_pilot_ledger-001",
+  "occurred_at": "2026-09-20T18:00:00+08:00",
+  "version": 1,
+  "summary": "登记公园需求试点账的首条领域记录"
+}

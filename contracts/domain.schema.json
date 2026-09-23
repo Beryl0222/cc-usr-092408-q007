@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "公园需求试点账领域事件",
+  "type": "object",
+  "required": [
+    "event_id",
+    "event_type",
+    "aggregate_type",
+    "aggregate_id",
+    "occurred_at",
+    "version",
+    "summary"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "NEED_LOGGED",
+        "PILOT_APPROVED",
+        "OBSERVATION_RECORDED",
+        "MAINTENANCE_COMPLETED",
+        "PILOT_DECIDED"
+      ]
+    },
+    "aggregate_type": {
+      "type": "string",
+      "enum": [
+        "community_need",
+        "pilot_measure",
+        "observation_window",
+        "maintenance_case"
+      ]
+    },
+    "aggregate_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "additionalProperties": true
+}
