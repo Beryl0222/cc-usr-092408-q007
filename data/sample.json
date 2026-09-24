@@ -1,9 +1,15 @@
 {
-  "event_id": "092108-013-sample-001",
+  "event_id": "a1b2c3d4e5f60718a1b2c3d4",
   "event_type": "NEED_LOGGED",
   "aggregate_type": "community_need",
-  "aggregate_id": "park_demand_pilot_ledger-001",
+  "aggregate_id": "need-0f1c2e3a4b5c6d78",
   "occurred_at": "2026-09-20T18:00:00+08:00",
   "version": 1,
-  "summary": "登记公园需求试点账的首条领域记录"
+  "summary": "登记去标识居民诉求（need-0f1c2e3a4b5c6d78）",
+  "payload": {
+    "summary": "希望在东湖环线增加夜跑照明",
+    "source_group": "夜跑居民群",
+    "category": "lighting",
+    "dedup_key": "9c1e7b2a3d4f5860"
+  }
 }

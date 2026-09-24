@@ -1,5 +1,5 @@
 [project]
 name = "park-demand-pilot-ledger"
-version = "0.1.0"
-description = "领域事件基础校验"
+version = "0.2.0"
+description = "公园居民诉求可逆试点决策账：事件溯源、冻结审批、安全停止线、原子资源与确定性回放"
 requires-python = ">=3.11"
