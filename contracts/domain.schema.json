@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "公园需求试点账领域事件",
+  "description": "事件一旦追加即不可原地改写；业务更正只能产生后继事件。payload 为事件类型专属字段。",
   "type": "object",
   "required": [
     "event_id",
@@ -9,29 +10,48 @@
     "aggregate_id",
     "occurred_at",
     "version",
-    "summary"
+    "summary",
+    "payload"
   ],
   "properties": {
     "event_id": {
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "description": "由 聚合+版本+类型+payload 规范化哈希确定性生成，重复回放保持不变"
     },
     "event_type": {
       "type": "string",
       "enum": [
         "NEED_LOGGED",
+        "CLUSTER_PROPOSED",
+        "POOL_FUNDED",
         "PILOT_APPROVED",
+        "PILOT_REJECTED",
         "OBSERVATION_RECORDED",
-        "MAINTENANCE_COMPLETED",
-        "PILOT_DECIDED"
+        "FEEDBACK_RECORDED",
+        "RESOURCE_USED",
+        "REVIEW_SCHEDULED",
+        "REVIEW_HELD",
+        "SAFETY_STOP_TRIGGERED",
+        "PILOT_PAUSED",
+        "PILOT_RESUMED",
+        "NOTIFICATION_SENT",
+        "PILOT_DECIDED",
+        "PILOT_ROLLED_BACK",
+        "BATCH_IMPORTED",
+        "BATCH_QUARANTINED",
+        "MAINTENANCE_COMPLETED"
       ]
     },
     "aggregate_type": {
       "type": "string",
       "enum": [
         "community_need",
+        "need_cluster",
+        "resource_pool",
         "pilot_measure",
         "observation_window",
+        "import_batch",
         "maintenance_case"
       ]
     },
@@ -41,15 +61,150 @@
     },
     "occurred_at": {
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "description": "业务发生时间（观测/反馈按发生时间序入账）"
     },
     "version": {
       "type": "integer",
-      "minimum": 1
+      "minimum": 1,
+      "description": "同一聚合内严格单调递增"
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "存储层分配的全局序号"
     },
     "summary": {
       "type": "string",
       "minLength": 1
+    },
+    "payload": {
+      "type": "object",
+      "description": "事件专属字段，键集合随 event_type 不同，见各事件约定",
+      "NEED_LOGGED": {
+        "need_id": "去标识诉求自然标识",
+        "summary": "去标识摘要，不得含姓名/联系方式/证件号",
+        "source_group": "来源群体，如 夜跑者/亲子家庭/周边居民",
+        "theme_tags": ["可选主题标签"]
+      },
+      "CLUSTER_PROPOSED": {
+        "cluster_id": "聚类自然标识",
+        "need_ids": ["归入本建议的诉求 id"],
+        "proposed_theme": "建议主题",
+        "rationale": "建议理由",
+        "confidence": "0-1 建议置信度",
+        "advisory": true
+      },
+      "POOL_FUNDED": {
+        "pool_id": "资源池",
+        "budget": "预算总额",
+        "slots": "名额总量",
+        "currency": "币种"
+      },
+      "PILOT_APPROVED": {
+        "pilot_id": "试点",
+        "title": "试点名称",
+        "cluster_ids": ["参考的聚类建议（仅建议）"],
+        "zones": ["受影响区域"],
+        "control_zones": ["对照区域"],
+        "conflict_tags": ["冲突标签，如 night_lighting/children_activity/quiet_rest"],
+        "window": {"start": "冻结开始", "end": "冻结结束"},
+        "metrics": {"指标名": {"target": "目标值", "tolerance": "允许偏离"}},
+        "safety_limits": {"安全指标名": {"max": "安全上限"}},
+        "bias_threshold": "单一群体反馈占比超过该值触发采样偏差复核",
+        "required_sample_size": "决策所需最小样本量",
+        "review_within_hours": "普通偏离复核时限",
+        "budget_total": "冻结预算占用",
+        "slots": "冻结名额占用",
+        "pool_id": "占用资源池",
+        "approver": "批准人"
+      },
+      "OBSERVATION_RECORDED": {
+        "pilot_id": "试点",
+        "observation_id": "观测自然标识，重传幂等键",
+        "observed_at": "发生时间",
+        "readings": [
+          {"kind": "metric|safety", "metric": "指标名", "value": "数值", "zones": ["读数区域"], "anomaly": "异常环境条件标记，为 true 时不计入指标评估"}
+        ]
+      },
+      "FEEDBACK_RECORDED": {
+        "pilot_id": "试点",
+        "feedback_id": "反馈自然标识，重传幂等键",
+        "source_group": "来源群体",
+        "rating": "可选评分",
+        "summary": "去标识摘要"
+      },
+      "REVIEW_SCHEDULED": {
+        "review_id": "复核",
+        "due_at": "到期时间（持久化，重启后继续）",
+        "reasons": ["metric_deviation|sampling_bias"],
+        "trigger_observation_id": "触发观测",
+        "metric_snapshot": "触发时指标快照"
+      },
+      "REVIEW_HELD": {
+        "review_id": "复核",
+        "held_at": "举行时间",
+        "finding": "认定",
+        "recommendation": "CONTINUE|ESCALATE|RECOMMEND_TERMINATE",
+        "evidence": "截止 held_at 的证据快照"
+      },
+      "SAFETY_STOP_TRIGGERED": {
+        "stop_id": "安全停止",
+        "indicator": "越线安全指标",
+        "value": "实测",
+        "limit": "限值",
+        "zones": ["立即暂停的受影响区域"],
+        "observation_id": "来源观测"
+      },
+      "PILOT_PAUSED": {
+        "zones": ["暂停区域"],
+        "reason": "暂停原因",
+        "ref_stop_id": "关联安全停止"
+      },
+      "PILOT_RESUMED": {
+        "zones": ["恢复区域"],
+        "ref_stop_id": "解除的安全停止",
+        "approver": "批准人"
+      },
+      "NOTIFICATION_SENT": {
+        "channel": "渠道",
+        "recipient_scope": "通知范围（群体/区域），不含个人标识",
+        "subject": "标题",
+        "body": "内容",
+        "ref_event_type": "触发事件类型"
+      },
+      "PILOT_DECIDED": {
+        "decision_id": "决策",
+        "decision": "EXPAND|EXTEND|TERMINATE",
+        "approver": "批准人",
+        "prior_spec_version": "决策前冻结版本",
+        "new_spec": "EXPAND/EXTEND 的新冻结段（增量区域/窗口/预算/名额）",
+        "evidence": {"observation_ids": [], "excluded_anomaly_ids": [], "feedback_ids": [], "review_ids": [], "stop_ids": [], "cluster_ids": [], "metric_aggregates": {}}
+      },
+      "PILOT_ROLLED_BACK": {
+        "rollback_id": "回滚",
+        "decision_id": "被回滚的决策",
+        "restored_spec_version": "恢复到的冻结版本",
+        "released": {"budget": "原子释放预算", "slots": "原子释放名额"},
+        "reason": "回滚原因"
+      },
+      "RESOURCE_USED": {
+        "pool_id": "资源池",
+        "budget_delta": "已发生预算（回滚后仍保留）",
+        "slots_delta": "已发生名额占用",
+        "reason": "用途"
+      },
+      "BATCH_IMPORTED": {
+        "batch_id": "批次（幂等键）",
+        "source": "来源",
+        "accepted": "入账条数",
+        "rejected": "隔离条数",
+        "ignored": "重传去重条数"
+      },
+      "BATCH_QUARANTINED": {
+        "batch_id": "批次",
+        "records": [{"index": "批次内行号", "reasons": ["拒收原因"], "raw": "去敏后的坏记录摘录"}]
+      }
     }
   },
   "additionalProperties": true
